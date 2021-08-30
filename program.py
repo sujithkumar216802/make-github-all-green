@@ -72,6 +72,8 @@ file_path = os.path.join(repo_dir, 'temp.txt')
 file = open(file_path, 'w')
 
 for day in new_count:
+    os.environ["GIT_AUTHOR_DATE"] = day['date'] + " 00:00:00"
+    os.environ["GIT_COMMITTER_DATE"] = day['date'] + " 00:00:00"
     for i in range(day['count']):
         file.write('a')
         repo.index.add([file_path])

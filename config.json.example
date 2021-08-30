@@ -1,0 +1,7 @@
+{
+    "access_token":"<PERSONAL_ACCESS_TOKEN>",
+    "repo_name":"<NEW_REPO_NAME_TO_CREATE>",
+    "commits_per_day": <TARGET_COMMIT_PER_DAY>,
+    "no_of_days":<DAYS_FROM_CURRENT_DAY>,
+    "user_name": "<USER_NAME>"
+}

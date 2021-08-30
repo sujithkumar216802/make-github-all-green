@@ -2,5 +2,6 @@
     "access_token":"<PERSONAL_ACCESS_TOKEN>",
     "commits_per_day": <TARGET_COMMIT_PER_DAY>,
     "no_of_days":<DAYS_FROM_CURRENT_DAY>,
-    "user_name": "<USER_NAME>"
+    "user_name": "<USER_NAME>",
+    "email":"<USER_EMAIL>"
 }

@@ -1,6 +1,9 @@
 import json
 import http.client
 import uuid
+import os
+from git import Repo
+from datetime import date, timedelta
 
 config = json.load(open('config.json'))
 
@@ -12,9 +15,13 @@ headers = {
 }
 
 
+today = date.today()
+delta = timedelta(config['no_of_days'])
+old_date = today - delta 
+
 # commit count
-payload = "{\"query\":\"{  user(login: \\\"%s\\\") {    contributionsCollection{\\n      contributionCalendar{\\n        weeks{\\n          contributionDays {\\n            date\\ncontributionCount\\n          }\\n        }\\n      }\\n    }  }}\"}" % (
-    config['user_name'])
+payload = "{\"query\":\"{  user(login: \\\"%s\\\") {    contributionsCollection(from:\\\"%sT00:00:00.000+00:00\\\", to:\\\"%sT00:00:00.000+00:00\\\"){\\n      contributionCalendar{\\n        weeks{\\n          contributionDays {\\n            date\\ncontributionCount\\n          }\\n        }\\n      }\\n    }  }}\"}" % (
+    config['user_name'], old_date, today)
 conn.request("POST", "/graphql", payload, headers)
 res = conn.getresponse()
 count_data = json.loads(res.read().decode('utf-8'))
@@ -26,7 +33,7 @@ for week in weeks:
     for day in week['contributionDays']:
         if(day['contributionCount'] < config['commits_per_day']):
             new_count.append(
-                {'date': day['date'], 'commits': config['commits_per_day']-day['contributionCount']})
+                {'date': day['date'], 'count': config['commits_per_day']-day['contributionCount']})
 
 if len(new_count) == 0:
     exit()
@@ -45,3 +52,29 @@ while name_is_not_unique:
     repo_data = json.loads(res.read().decode('utf-8'))
     if repo_data['data']['user']['repository'] == None:
         name_is_not_unique = False
+
+
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+repo_dir = os.path.join(curr_dir, 'temprepo')
+
+# create repo
+repo = Repo.init(os.path.join(repo_dir), bare=False)
+
+repo.git.checkout(b='master')
+
+# set config
+git_config = repo.config_writer()
+git_config.set_value('user', 'email', config['email'])
+git_config.set_value('user', 'name', config['user_name'])
+
+
+file_path = os.path.join(repo_dir, 'temp.txt')
+file = open(file_path, 'w')
+
+for day in new_count:
+    for i in range(day['count']):
+        file.write('a')
+        repo.index.add([file_path])
+        repo.index.commit('commit')
+
+file.close()

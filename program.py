@@ -17,7 +17,7 @@ headers = {
 
 today = date.today()
 delta = timedelta(config['no_of_days'])
-old_date = today - delta 
+old_date = today - delta
 
 # commit count
 payload = "{\"query\":\"{  user(login: \\\"%s\\\") {    contributionsCollection(from:\\\"%sT00:00:00.000+00:00\\\", to:\\\"%sT00:00:00.000+00:00\\\"){\\n      contributionCalendar{\\n        weeks{\\n          contributionDays {\\n            date\\ncontributionCount\\n          }\\n        }\\n      }\\n    }  }}\"}" % (
@@ -62,16 +62,23 @@ repo_dir = os.path.join(curr_dir, repo_name)
 repo = Repo.init(os.path.join(repo_dir), bare=False)
 repo.git.checkout(b='master')
 
+
+# create repo in github
+conn.request('POST',  '/user/repos', '{"name":"%s"}' % (repo_name), headers)
+
+origin = repo.create_remote('origin', 'https://%s@github.com/%s/%s' %
+                            (config['access_token'], config['user_name'], repo_name))
+
 # set config
 git_config = repo.config_writer()
 git_config.set_value('user', 'email', config['email'])
 git_config.set_value('user', 'name', config['user_name'])
 
-#creating a temporary file to add values and commit
+# creating a temporary file to add values and commit
 file_path = os.path.join(repo_dir, 'temp.txt')
 file = open(file_path, 'w')
 
-#commiting
+# commiting
 for day in new_count:
     os.environ["GIT_AUTHOR_DATE"] = day['date'] + " 00:00:00"
     os.environ["GIT_COMMITTER_DATE"] = day['date'] + " 00:00:00"
@@ -82,9 +89,5 @@ for day in new_count:
 
 file.close()
 
-
-# create repo in github
-conn.request('POST',  '/user/repos', '{"name":"%s"}'  % (repo_name), headers)
-res = conn.getresponse()
-message = json.loads(res.read().decode('utf-8'))
+repo.git.push('--set-upstream', origin, repo.head.ref)
 

@@ -38,6 +38,7 @@ for week in weeks:
 if len(new_count) == 0:
     exit()
 
+
 # reponame
 name_is_not_unique = True
 
@@ -55,11 +56,10 @@ while name_is_not_unique:
 
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
-repo_dir = os.path.join(curr_dir, 'temprepo')
+repo_dir = os.path.join(curr_dir, repo_name)
 
 # create repo
 repo = Repo.init(os.path.join(repo_dir), bare=False)
-
 repo.git.checkout(b='master')
 
 # set config
@@ -67,10 +67,11 @@ git_config = repo.config_writer()
 git_config.set_value('user', 'email', config['email'])
 git_config.set_value('user', 'name', config['user_name'])
 
-
+#creating a temporary file to add values and commit
 file_path = os.path.join(repo_dir, 'temp.txt')
 file = open(file_path, 'w')
 
+#commiting
 for day in new_count:
     os.environ["GIT_AUTHOR_DATE"] = day['date'] + " 00:00:00"
     os.environ["GIT_COMMITTER_DATE"] = day['date'] + " 00:00:00"
@@ -80,3 +81,10 @@ for day in new_count:
         repo.index.commit('commit')
 
 file.close()
+
+
+# create repo in github
+conn.request('POST',  '/user/repos', '{"name":"%s"}'  % (repo_name), headers)
+res = conn.getresponse()
+message = json.loads(res.read().decode('utf-8'))
+

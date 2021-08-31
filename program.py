@@ -64,7 +64,7 @@ repo.git.checkout(b='master')
 
 
 # create repo in github
-conn.request('POST',  '/user/repos', '{"name":"%s"}' % (repo_name), headers)
+conn.request('POST',  '/user/repos', '{"name":"%s", "private":"false"}' % (repo_name), headers)
 
 origin = repo.create_remote('origin', 'https://%s@github.com/%s/%s' %
                             (config['access_token'], config['user_name'], repo_name))
@@ -74,20 +74,12 @@ git_config = repo.config_writer()
 git_config.set_value('user', 'email', config['email'])
 git_config.set_value('user', 'name', config['user_name'])
 
-# creating a temporary file to add values and commit
-file_path = os.path.join(repo_dir, 'temp.txt')
-file = open(file_path, 'w')
 
 # commiting
 for day in new_count:
     os.environ["GIT_AUTHOR_DATE"] = day['date'] + " 00:00:00"
     os.environ["GIT_COMMITTER_DATE"] = day['date'] + " 00:00:00"
     for i in range(day['count']):
-        file.write('a')
-        repo.index.add([file_path])
         repo.index.commit('commit')
 
-file.close()
-
 repo.git.push('--set-upstream', origin, repo.head.ref)
-

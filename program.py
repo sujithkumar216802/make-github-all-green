@@ -1,9 +1,9 @@
-import json
 import http.client
-import uuid
+import json
+import subprocess
 import os
 import time
-from git import Repo
+import uuid
 from datetime import date, timedelta
 
 config = json.load(open('config.json'))
@@ -60,23 +60,25 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 repo_dir = os.path.join(curr_dir, repo_name)
 
 # create repo
-repo = Repo.init(os.path.join(repo_dir), bare=False)
-repo.git.checkout(b='master')
-
+subprocess.run(['git', 'init', repo_name])
 
 # create repo in github
-conn.request('POST',  '/user/repos', '{"name":"%s", "private":"false"}' % (repo_name), headers)
+conn.request('POST',  '/user/repos',
+             '{"name":"%s", "private":"false"}' % (repo_name), headers)
 
 # if the number of commits to be made it low it fails. To mitigate that a 3 second delay
 time.sleep(3)
 
-origin = repo.create_remote('origin', 'https://%s@github.com/%s/%s' %
-                            (config['access_token'], config['user_name'], repo_name))
+# add remote to repo
+subprocess.run(['git', 'remote', 'add', 'origin', 'https://%s@github.com/%s/%s' %
+                (config['access_token'], config['user_name'], repo_name)], cwd=repo_dir)
 
 # set config
-git_config = repo.config_writer()
-git_config.set_value('user', 'email', config['email'])
-git_config.set_value('user', 'name', config['user_name'])
+subprocess.run(['git', 'config', 'user.name', '"%s"' %
+               (config['user_name'])], cwd=repo_dir)
+
+subprocess.run(['git', 'config', 'user.email', '"%s"' %
+               (config['email'])], cwd=repo_dir)
 
 
 # commiting
@@ -84,6 +86,8 @@ for day in new_count:
     os.environ["GIT_AUTHOR_DATE"] = day['date'] + " 00:00:00"
     os.environ["GIT_COMMITTER_DATE"] = day['date'] + " 00:00:00"
     for i in range(day['count']):
-        repo.index.commit('commit')
+        subprocess.run(['git', 'commit', '--allow-empty',
+                       '-m', 'commit'], cwd=repo_dir)
+        print('day : %s  commit: %d/%d' % (day['date'], i, day['count']))
 
-repo.git.push('--set-upstream', origin, repo.head.ref)
+subprocess.run(['git', 'push', 'origin', 'master'], cwd=repo_dir)

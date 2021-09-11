@@ -2,6 +2,7 @@ import json
 import http.client
 import uuid
 import os
+import time
 from git import Repo
 from datetime import date, timedelta
 
@@ -65,6 +66,9 @@ repo.git.checkout(b='master')
 
 # create repo in github
 conn.request('POST',  '/user/repos', '{"name":"%s", "private":"false"}' % (repo_name), headers)
+
+# if the number of commits to be made it low it fails. To mitigate that a 3 second delay
+time.sleep(3)
 
 origin = repo.create_remote('origin', 'https://%s@github.com/%s/%s' %
                             (config['access_token'], config['user_name'], repo_name))
